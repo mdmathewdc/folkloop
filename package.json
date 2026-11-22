@@ -1,0 +1,51 @@
+{
+  "name": "folkloop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Folkloop: Little lives. Endless stories. A persistent pixel-art life simulation powered by Temporal.io.",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "next dev -p 3000",
+    "dev:worker": "tsx watch src/temporal/worker.ts",
+    "infra:up": "docker compose -f infrastructure/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infrastructure/docker-compose.yml down",
+    "db:migrate": "node scripts/migrate.mjs",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@temporalio/activity": "^1.11.7",
+    "@temporalio/client": "^1.11.7",
+    "@temporalio/common": "^1.11.7",
+    "@temporalio/worker": "^1.11.7",
+    "@temporalio/workflow": "^1.11.7",
+    "dotenv": "^16.4.7",
+    "lucide-react": "^0.474.0",
+    "next": "^15.1.6",
+    "pg": "^8.13.1",
+    "phaser": "^3.87.0",
+    "pino": "^9.6.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@temporalio/testing": "^1.11.7",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

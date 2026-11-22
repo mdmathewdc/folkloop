@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #f6efe0;
+    color: #3d2b1f;
+    background-image: radial-gradient(#e4d6bc 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}
+
+.pixel-canvas canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
