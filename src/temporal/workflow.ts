@@ -95,13 +95,13 @@ export async function villagerLifecycleWorkflow(input: VillagerWorkflowInput): P
     generation = input.carriedState.generation + 1;
   } else {
     needs = { ...INITIAL_BOB_NEEDS };
-    const initialSlot = getInitialStateForHour(initialInGameTime.hour);
+    const initialSlot = getInitialStateForHour(initialInGameTime.hour, initialInGameTime.minute);
     currentActivity = initialSlot.activity;
     currentLocation = initialSlot.location;
-    lastProcessedScheduleKey = scheduleSlotKey(
-      initialInGameTime.day,
-      Math.max(0, initialInGameTime.hour - (initialInGameTime.minute === 0 ? 1 : 0)),
-    );
+    const isExactBoundary = initialInGameTime.minute === 0 || initialInGameTime.minute === 30;
+    lastProcessedScheduleKey =
+      scheduleSlotKey(initialInGameTime.day, initialInGameTime.hour, initialInGameTime.minute) -
+      (isExactBoundary ? 1 : 0);
     eventSeq = 0;
     generation = 1;
   }
@@ -351,7 +351,8 @@ export async function villagerLifecycleWorkflow(input: VillagerWorkflowInput): P
     }
 
     const next = getNextScheduleSlot(lastProcessedScheduleKey);
-    const targetMs = getTimestampForInGameTime(next.day, next.slot.hour, clockConfig);
+    const slotMinute = next.slot.minute ?? 0;
+    const targetMs = getTimestampForInGameTime(next.day, next.slot.hour, clockConfig, slotMinute);
     const delayMs = targetMs - Date.now();
 
     if (delayMs > 0) {
@@ -369,14 +370,14 @@ export async function villagerLifecycleWorkflow(input: VillagerWorkflowInput): P
     const snapshot = buildStateSnapshot(transitionNowMs);
 
     await activities.recordVillagerEvent({
-      id: `${input.id}:d${next.day}:h${next.slot.hour}:${next.slot.eventType}`,
+      id: `${input.id}:d${next.day}:h${next.slot.hour}m${slotMinute}:${next.slot.eventType}`,
       villagerId: input.id,
       eventType: next.slot.eventType,
       description: next.slot.description,
       occurredAt: new Date(targetMs).toISOString(),
       inGameDay: next.day,
       inGameHour: next.slot.hour,
-      inGameMinute: 0,
+      inGameMinute: slotMinute,
       workflowId: info.workflowId,
       runId: info.runId,
     });

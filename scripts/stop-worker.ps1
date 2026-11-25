@@ -15,4 +15,4 @@ foreach ($proc in $workers) {
 }
 
 Write-Host "Folkloop Worker stopped! Temporal Server, PostgreSQL, and Next.js remain running." -ForegroundColor Green
-Write-Host "Wait 1-2 minutes for in-game time to progress, then run: .\scripts\start-worker.ps1" -ForegroundColor Cyan
+Write-Host "Wait ~30-60 seconds for in-game time to progress, then run: .\scripts\start-worker.ps1" -ForegroundColor Cyan

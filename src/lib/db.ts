@@ -1,6 +1,5 @@
 import { Pool } from 'pg';
 import { getConfig } from './config';
-import { DEFAULT_MS_PER_IN_GAME_HOUR } from './constants';
 import type {
   VillagerActivity,
   VillagerEventRecord,
@@ -139,7 +138,7 @@ export async function getVillagerSnapshot(villagerId: string): Promise<VillagerS
     currentMinute: row.current_minute,
     lastUpdatedAt: row.updated_at.toISOString(),
     simulationEpochMs: row.updated_at.getTime(),
-    msPerInGameHour: DEFAULT_MS_PER_IN_GAME_HOUR,
+    msPerInGameHour: getConfig().simulationMsPerHour,
     generation: 1,
     eventSeq: row.last_event_seq,
   };

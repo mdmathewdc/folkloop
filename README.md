@@ -1,85 +1,55 @@
 # Folkloop — Little lives. Endless stories.
 
-**Folkloop V1** is a persistent, browser-based pixel-art life simulation powered by **[Temporal.io](https://temporal.io/)**, **Next.js (App Router)**, **Phaser 3**, and **PostgreSQL**.
+A Pokémon Emerald–style pixel-art life simulation powered by **[Temporal.io](https://temporal.io/)**, **Next.js (App Router)**, **Phaser 3**, and **PostgreSQL**.
 
-Meet **Bob the Baker**. Bob lives in a cosy pixel-art village — waking up, walking to his bakery, baking bread, eating lunch, closing up, walking home, relaxing, and sleeping — **even when the browser is closed or the Worker crashes and restarts.**
+Watch **Bob the Baker** follow a persistent **15-stop daily routine** across 6 Hoenn-inspired village landmarks (`HOME`, `GARDEN`, `VILLAGE`, `BAKERY`, `POND`, `BENCH`) at **30 real seconds = 1 in-game hour** — even when your browser is closed or the Temporal Worker crashes and restarts.
 
----
+## Quick Start
 
-## Project Structure
-
-A single, flat TypeScript app (no monorepo build steps, no separate API server):
-
-```text
-folkloop/
-├── src/
-│   ├── app/
-│   │   ├── api/villagers/bob/   # Next.js Route Handlers (Temporal Client + Postgres reads)
-│   │   └── page.tsx             # Main Folkloop village UI
-│   ├── components/              # CharacterPanel, ActivityFeed, TemporalInspector, VillageCanvas
-│   ├── game/                    # Phaser 3 pixel-art village scene
-│   ├── lib/                     # Clock, schedule, needs, DB pool, Temporal client
-│   └── temporal/                # signals.ts, activities.ts, workflow.ts, worker.ts
-├── test/                        # Vitest + Temporal time-skipping & replay tests
-├── infrastructure/
-│   ├── docker-compose.yml       # PostgreSQL 16 + Temporal Dev Server & Web UI (:8233)
-│   └── migrations/              # SQL schema migrations
-├── scripts/
-│   ├── dev.mjs                  # One-command `pnpm dev` runner
-│   ├── migrate.mjs              # SQL migration runner
-│   └── stop-worker.{sh,ps1}     # Worker Crash Demonstration scripts
-└── docs/
-    └── TEMPORAL_CONCEPTS.md     # Guide mapping all 12 Temporal concepts to Folkloop code
-```
-
----
-
-## Quick Start (One Command!)
-
-Prerequisites: **Node.js >= 20**, **pnpm >= 9**, and **Docker Desktop** running.
+Requires **Node.js >= 20**, **pnpm >= 9**, and **Docker Desktop** running.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-`pnpm dev` automatically:
-1. Creates `.env` from `.env.example` (if missing)
-2. Starts PostgreSQL (`:5432`) and Temporal Server + Web UI (`:7233` / `:8233`) via Docker Compose
-3. Waits for both services and runs SQL migrations
-4. Launches **Next.js (`:3000`)** and the **Temporal Worker** together in one terminal with color-coded `[web]` and `[worker]` logs
+`pnpm dev` creates `.env` from `.env.example` (if missing), starts PostgreSQL and Temporal via Docker Compose, runs SQL migrations, and launches Next.js + the Temporal Worker together.
 
-Open:
 - **Folkloop Village:** [http://localhost:3000](http://localhost:3000)
 - **Temporal Web UI:** [http://localhost:8233](http://localhost:8233)
 
----
+## How It Works
 
-## Worker Crash & Recovery Demonstration
+- **1 Durable Workflow (`villager-bob`):** `villagerLifecycleWorkflow` (`src/temporal/workflow.ts`) owns Bob's live needs (`Hunger`, `Energy`, `Happiness`), walks him through his 15 half-hour-aware stops (`src/lib/schedule.ts`), and compacts history via Continue-As-New every 3 in-game days.
+- **3 Idempotent Activities (`src/temporal/activities.ts`):** `persistVillagerState`, `recordVillagerEvent`, and `sendVillagerNotification` write snapshots, story events, and alerts to PostgreSQL with `ON CONFLICT` guards so retries never create duplicates.
+- **Update vs. Signal vs. Query (`src/temporal/signals.ts`):**
+  - **Update (`Feed`):** Synchronously validated (`feedVillagerUpdate`) — rejects if Bob is sleeping or already full (`hunger <= 5`).
+  - **Signals (`Wake`, `Steal Bread`):** Fire-and-forget events (`wakeVillagerSignal`, `breadStolenSignal`) buffered durably by Temporal.
+  - **Query (`getVillagerStateQuery`):** Live state reads for the UI, with automatic PostgreSQL snapshot fallback when the Worker is offline.
+- **`Story` & `Temporal` Tabs (`src/app/page.tsx`):** Switch between Bob's chronological village log (**Story**) and live workflow telemetry, next durable timer, event history tape, and Temporal Web UI link (**Temporal**).
 
-1. Run `pnpm dev` and watch Bob progress through his routine.
-2. In a second terminal, stop **only** the Worker:
-   - WSL2 / Bash: `./scripts/stop-worker.sh`
-   - Windows PowerShell: `.\scripts\stop-worker.ps1`
-3. Notice the browser stays online and switches to **`WORKER OFFLINE`**, displaying the last persisted PostgreSQL snapshot while Temporal Server keeps Bob's durable timers ticking.
-4. Wait 1–2 minutes, then restart the Worker:
-   ```bash
-   pnpm run dev:worker
-   ```
-5. Watch Temporal replay Bob's Workflow History, catch up missed hours chronologically, and persist zero duplicate events.
+New to Temporal? Read **[docs/TEMPORAL_CONCEPTS.md](docs/TEMPORAL_CONCEPTS.md)** for a beginner-friendly map of all 12 Temporal concepts to Folkloop's code.
 
----
+## Worker Crash Demo
 
-## Useful Commands
+1. Start the app with `pnpm dev` and watch Bob progress through his routine.
+2. In a second terminal, stop **only** the Worker: `./scripts/stop-worker.sh` (WSL2/macOS/Linux) or `.\scripts\stop-worker.ps1` (Windows PowerShell).
+3. The village UI stays online, switches to **`WORKER OFFLINE`**, and shows the latest PostgreSQL snapshot while Temporal Server keeps Bob's durable timers ticking.
+4. Restart the Worker with `pnpm run dev:worker` — Temporal replays history, catches up missed stops in chronological order, and writes zero duplicate events.
 
-```bash
-pnpm dev              # Start everything (Docker + migrations + Web + Worker)
-pnpm test             # Run all Vitest & Temporal time-skipping/replay tests
-pnpm run typecheck    # Strict TypeScript check
-pnpm run build        # Next.js production build
-pnpm run dev:worker   # Start only the Temporal Worker
-pnpm run dev:web      # Start only Next.js
-pnpm run infra:down   # Stop Docker containers
-```
+## Hosting Note (Vercel)
 
-Read **[docs/TEMPORAL_CONCEPTS.md](docs/TEMPORAL_CONCEPTS.md)** for a beginner-friendly walkthrough of every Temporal concept used in Folkloop.
+- **Vercel** is ideal for the Next.js frontend and `/api/villagers/bob/*` routes (which only act as a lightweight Temporal Client and PostgreSQL reader).
+- Temporal requires a **persistent Temporal Server** and a **long-running, always-on Worker** (`src/temporal/worker.ts`) — serverless functions cannot hold a Worker polling loop.
+- A simple production stack: **Vercel** (Next.js app) + **Temporal Cloud** (or self-hosted Temporal) + **Neon / Supabase** (PostgreSQL) + **Railway / Fly.io** (always-on Worker).
+- Point Vercel and the Worker at the same `DATABASE_URL`, `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, and `TEMPORAL_TASK_QUEUE`.
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Start Docker (Postgres + Temporal), run migrations, and launch Web + Worker |
+| `pnpm test` | Run Vitest unit, activity, and Temporal time-skipping/replay tests |
+| `pnpm run typecheck` | Run strict TypeScript type-checking (`tsc --noEmit`) |
+| `pnpm run build` | Build the Next.js production bundle |
+| `pnpm run infra:down` | Stop the local Docker Compose services |

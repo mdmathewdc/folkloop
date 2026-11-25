@@ -88,36 +88,99 @@ describe('villagerLifecycleWorkflow (Temporal Time-Skipping Integration)', () =>
 
       expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('SLEEPING');
 
+      // 07:05 - Wake up
       await testEnv.sleep('35 seconds');
       expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('WAKING_UP');
 
-      await testEnv.sleep('60 seconds');
+      // 07:35 - Gardening (half-hour slot)
+      await testEnv.sleep('30 seconds');
+      const gardenState = await handle.query(getVillagerStateQuery);
+      expect(gardenState.currentActivity).toBe('GARDENING');
+      expect(gardenState.currentLocation).toBe('GARDEN');
+
+      // 08:05 - Walk to bakery
+      await testEnv.sleep('30 seconds');
       expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('WALKING');
 
+      // 09:05 - Start baking
       await testEnv.sleep('60 seconds');
       expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('BAKING');
 
-      await testEnv.sleep('180 seconds');
-      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('EATING');
+      // 10:35 - Fetch water at pond (half-hour slot)
+      await testEnv.sleep('90 seconds');
+      const waterState = await handle.query(getVillagerStateQuery);
+      expect(waterState.currentActivity).toBe('FETCHING_WATER');
+      expect(waterState.currentLocation).toBe('POND');
 
-      await testEnv.sleep('600 seconds');
+      // 11:05 - Midday baking
+      await testEnv.sleep('30 seconds');
+      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('BAKING');
+
+      // 12:05 - Eat lunch on bench
+      await testEnv.sleep('60 seconds');
+      const lunchState = await handle.query(getVillagerStateQuery);
+      expect(lunchState.currentActivity).toBe('EATING');
+      expect(lunchState.currentLocation).toBe('BENCH');
+
+      // 13:05 - Check village signpost
+      await testEnv.sleep('60 seconds');
+      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('WALKING');
+
+      // 14:05 - Afternoon baking
+      await testEnv.sleep('60 seconds');
+      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('BAKING');
+
+      // 16:05 - Restock flour
+      await testEnv.sleep('120 seconds');
+      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('RESTOCKING');
+
+      // 17:05 - Close bakery
+      await testEnv.sleep('60 seconds');
+      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('IDLE');
+
+      // 18:05 - Sunset stroll by pond
+      await testEnv.sleep('60 seconds');
+      const strollState = await handle.query(getVillagerStateQuery);
+      expect(strollState.currentActivity).toBe('STROLLING');
+      expect(strollState.currentLocation).toBe('POND');
+
+      // 19:35 - Walk home (half-hour slot)
+      await testEnv.sleep('90 seconds');
+      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('WALKING');
+
+      // 20:05 - Relax outside cottage
+      await testEnv.sleep('30 seconds');
+      expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('RELAXING');
+
+      // 22:05 - Go to sleep
+      await testEnv.sleep('120 seconds');
       expect((await handle.query(getVillagerStateQuery)).currentActivity).toBe('SLEEPING');
 
       expect(mock.events.map((e) => e.eventType)).toEqual([
         'WOKE_UP',
+        'TENDED_GARDEN',
         'WALKED_TO_BAKERY',
         'STARTED_BAKING',
-        'ATE_LUNCH',
+        'FETCHED_WATER',
         'RESUMED_BAKING',
+        'ATE_LUNCH',
+        'CHECKED_SIGNPOST',
+        'RESUMED_BAKING',
+        'RESTOCKED_FLOUR',
         'CLOSED_BAKERY',
+        'STROLLED_BY_POND',
         'WALKED_HOME',
         'RELAXED',
         'WENT_TO_SLEEP',
       ]);
 
+      expect(mock.events.find((e) => e.eventType === 'TENDED_GARDEN')?.inGameMinute).toBe(30);
+      expect(mock.events.find((e) => e.eventType === 'FETCHED_WATER')?.inGameMinute).toBe(30);
+      expect(mock.events.find((e) => e.eventType === 'WALKED_HOME')?.inGameMinute).toBe(30);
+
       await handle.terminate('test complete');
     });
-  }, 30_000);
+  }, 60_000);
 
   it('handles Feed Update, Wake Up Signal, and Bread Stolen Signal', async () => {
     const mock = createMockActivities();

@@ -1,13 +1,17 @@
 export type VillagerActivity =
   | 'SLEEPING'
   | 'WAKING_UP'
+  | 'GARDENING'
   | 'WALKING'
   | 'BAKING'
+  | 'FETCHING_WATER'
   | 'EATING'
+  | 'RESTOCKING'
+  | 'STROLLING'
   | 'RELAXING'
   | 'IDLE';
 
-export type VillagerLocation = 'HOME' | 'BAKERY' | 'VILLAGE';
+export type VillagerLocation = 'HOME' | 'GARDEN' | 'VILLAGE' | 'BAKERY' | 'POND' | 'BENCH';
 
 export interface VillagerNeeds {
   hunger: number;
@@ -18,7 +22,7 @@ export interface VillagerNeeds {
 export interface ClockConfig {
   /** Real-world Unix ms timestamp corresponding to Day 1, 00:00 in-game */
   simulationEpochMs: number;
-  /** Real-world milliseconds per 1 in-game hour (default: 60000) */
+  /** Real-world milliseconds per 1 in-game hour (default: 30000) */
   msPerInGameHour: number;
 }
 
@@ -51,11 +55,16 @@ export interface VillagerState {
 
 export type VillagerEventType =
   | 'WOKE_UP'
+  | 'TENDED_GARDEN'
   | 'WALKED_TO_BAKERY'
   | 'STARTED_BAKING'
+  | 'FETCHED_WATER'
   | 'ATE_LUNCH'
+  | 'CHECKED_SIGNPOST'
   | 'RESUMED_BAKING'
+  | 'RESTOCKED_FLOUR'
   | 'CLOSED_BAKERY'
+  | 'STROLLED_BY_POND'
   | 'WALKED_HOME'
   | 'RELAXED'
   | 'WENT_TO_SLEEP'

@@ -2,7 +2,6 @@ import type {
   FeedVillagerRequest,
   FeedVillagerResult,
   VillagerEventRecord,
-  VillagerNotificationRecord,
   VillagerState,
   WorkflowInspectorInfo,
 } from './types';
@@ -55,13 +54,6 @@ export async function fetchBobEvents(limit = 40): Promise<VillagerEventRecord[]>
     `/api/villagers/bob/events?limit=${limit}`,
   );
   return data.events;
-}
-
-export async function fetchBobNotifications(limit = 10): Promise<VillagerNotificationRecord[]> {
-  const data = await requestJson<{ notifications: VillagerNotificationRecord[] }>(
-    `/api/villagers/bob/notifications?limit=${limit}`,
-  );
-  return data.notifications;
 }
 
 export async function fetchBobInspector(): Promise<WorkflowInspectorInfo> {

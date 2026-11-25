@@ -41,7 +41,8 @@ export function getTimestampForInGameTime(
   day: number,
   hour: number,
   config: ClockConfig,
+  minute = 0,
 ): number {
-  const totalHoursFromEpoch = (day - 1) * 24 + hour;
+  const totalHoursFromEpoch = (day - 1) * 24 + hour + minute / 60;
   return config.simulationEpochMs + Math.round(totalHoursFromEpoch * config.msPerInGameHour);
 }

@@ -11,4 +11,4 @@ fi
 echo "Stopping Folkloop Worker PIDs: $PIDS"
 kill -TERM $PIDS || true
 echo "Folkloop Worker stopped! Temporal Server, PostgreSQL, and Next.js remain running."
-echo "Wait 1-2 minutes for in-game time to progress, then run: ./scripts/start-worker.sh"
+echo "Wait ~30-60 seconds for in-game time to progress, then run: ./scripts/start-worker.sh"

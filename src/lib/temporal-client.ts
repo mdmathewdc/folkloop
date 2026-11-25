@@ -2,7 +2,6 @@ import {
   Client,
   Connection,
   WorkflowExecutionAlreadyStartedError,
-  WorkflowNotFoundError,
   WorkflowUpdateFailedError,
 } from '@temporalio/client';
 import { ApplicationFailure } from '@temporalio/common';
@@ -74,11 +73,52 @@ function protobufDurationToSeconds(
   return secs + nanos / 1_000_000_000;
 }
 
+const EVENT_TYPE_NAMES: Record<number, string> = {
+  0: 'UNSPECIFIED',
+  1: 'WORKFLOW_EXECUTION_STARTED',
+  2: 'WORKFLOW_EXECUTION_COMPLETED',
+  3: 'WORKFLOW_EXECUTION_FAILED',
+  4: 'WORKFLOW_EXECUTION_TIMED_OUT',
+  5: 'WORKFLOW_TASK_SCHEDULED',
+  6: 'WORKFLOW_TASK_STARTED',
+  7: 'WORKFLOW_TASK_COMPLETED',
+  8: 'WORKFLOW_TASK_TIMED_OUT',
+  9: 'WORKFLOW_TASK_FAILED',
+  10: 'ACTIVITY_TASK_SCHEDULED',
+  11: 'ACTIVITY_TASK_STARTED',
+  12: 'ACTIVITY_TASK_COMPLETED',
+  13: 'ACTIVITY_TASK_FAILED',
+  14: 'ACTIVITY_TASK_TIMED_OUT',
+  15: 'ACTIVITY_TASK_CANCEL_REQUESTED',
+  16: 'ACTIVITY_TASK_CANCELED',
+  17: 'TIMER_STARTED',
+  18: 'TIMER_FIRED',
+  19: 'TIMER_CANCELED',
+  20: 'WORKFLOW_EXECUTION_CANCEL_REQUESTED',
+  21: 'WORKFLOW_EXECUTION_CANCELED',
+  25: 'MARKER_RECORDED',
+  26: 'WORKFLOW_EXECUTION_SIGNALED',
+  27: 'WORKFLOW_EXECUTION_TERMINATED',
+  28: 'WORKFLOW_EXECUTION_CONTINUED_AS_NEW',
+  40: 'UPSERT_WORKFLOW_SEARCH_ATTRIBUTES',
+  41: 'WORKFLOW_EXECUTION_UPDATE_ACCEPTED',
+  42: 'WORKFLOW_EXECUTION_UPDATE_REJECTED',
+  43: 'WORKFLOW_EXECUTION_UPDATE_COMPLETED',
+  47: 'WORKFLOW_EXECUTION_UPDATE_ADMITTED',
+};
+
 function formatHistoryEventType(rawType: unknown): string {
+  if (typeof rawType === 'number') {
+    return EVENT_TYPE_NAMES[rawType] ?? `EVENT_${rawType}`;
+  }
   if (typeof rawType === 'string') {
+    const asNum = Number(rawType);
+    if (Number.isInteger(asNum) && EVENT_TYPE_NAMES[asNum]) {
+      return EVENT_TYPE_NAMES[asNum];
+    }
     return rawType.replace(/^EVENT_TYPE_/, '');
   }
-  return String(rawType ?? 'UNKNOWN');
+  return 'UNKNOWN';
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -141,15 +181,11 @@ export async function ensureBobWorkflowStarted(): Promise<{
 export async function queryBobState(timeoutMs = 2500): Promise<VillagerState> {
   const client = await getTemporalClient();
   const handle = client.workflow.getHandle(BOB_WORKFLOW_ID);
-  try {
-    return await withTimeout(handle.query<VillagerState>('getVillagerState'), timeoutMs);
-  } catch (err) {
-    if (err instanceof WorkflowNotFoundError) {
-      await ensureBobWorkflowStarted();
-      return await withTimeout(handle.query<VillagerState>('getVillagerState'), timeoutMs);
-    }
-    throw err;
+  const desc = await handle.describe().catch(() => null);
+  if (!desc || desc.status.name !== 'RUNNING') {
+    await ensureBobWorkflowStarted();
   }
+  return await withTimeout(handle.query<VillagerState>('getVillagerState'), timeoutMs);
 }
 
 export async function feedBobWorkflow(req?: FeedVillagerRequest): Promise<FeedVillagerResult> {
@@ -194,16 +230,10 @@ export async function inspectBobWorkflow(): Promise<WorkflowInspectorInfo> {
   const config = getConfig();
   const handle = client.workflow.getHandle(BOB_WORKFLOW_ID);
 
-  let desc;
-  try {
+  let desc = await handle.describe().catch(() => null);
+  if (!desc || desc.status.name !== 'RUNNING') {
+    await ensureBobWorkflowStarted();
     desc = await handle.describe();
-  } catch (err) {
-    if (err instanceof WorkflowNotFoundError) {
-      await ensureBobWorkflowStarted();
-      desc = await handle.describe();
-    } else {
-      throw err;
-    }
   }
 
   const history = await handle.fetchHistory();

@@ -2,8 +2,8 @@ export const BOB_VILLAGER_ID = 'bob';
 export const BOB_WORKFLOW_ID = 'villager-bob';
 export const VILLAGER_TASK_QUEUE = 'folkloop-villagers';
 
-/** Default: 1 real minute (60,000 ms) = 1 in-game hour */
-export const DEFAULT_MS_PER_IN_GAME_HOUR = 60_000;
+/** Default: 30 real seconds (30,000 ms) = 1 in-game hour */
+export const DEFAULT_MS_PER_IN_GAME_HOUR = 30_000;
 
 /** Default number of in-game days per workflow run before Continue-As-New */
 export const DEFAULT_CONTINUE_AS_NEW_AFTER_DAYS = 3;

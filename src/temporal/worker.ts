@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import pino from 'pino';
 import { NativeConnection, Worker } from '@temporalio/worker';
-import { VILLAGER_TASK_QUEUE } from '../lib/constants';
+import { getConfig } from '../lib/config';
 import { createVillagerActivities } from './activities';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -14,11 +14,12 @@ const logger = pino({
 });
 
 async function run(): Promise<void> {
-  const temporalAddress = process.env.TEMPORAL_ADDRESS ?? 'localhost:7233';
-  const namespace = process.env.TEMPORAL_NAMESPACE ?? 'default';
-  const taskQueue = process.env.TEMPORAL_TASK_QUEUE ?? VILLAGER_TASK_QUEUE;
-  const databaseUrl =
-    process.env.DATABASE_URL ?? 'postgresql://folkloop:folkloop@localhost:5432/folkloop';
+  const {
+    temporalAddress,
+    temporalNamespace: namespace,
+    temporalTaskQueue: taskQueue,
+    databaseUrl,
+  } = getConfig();
 
   logger.info({ temporalAddress, namespace, taskQueue }, 'Starting Folkloop Temporal Worker...');
 
