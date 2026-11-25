@@ -43,19 +43,23 @@ export function getConfig(): AppConfig {
   const defaultUiUrl = temporalTls ? 'https://cloud.temporal.io' : 'http://localhost:8233';
 
   return {
-    databaseUrl,
+    databaseUrl: databaseUrl.trim(),
     databaseSsl,
-    temporalAddress: process.env.TEMPORAL_ADDRESS ?? 'localhost:7233',
-    temporalNamespace: process.env.TEMPORAL_NAMESPACE ?? 'default',
-    temporalTaskQueue: process.env.TEMPORAL_TASK_QUEUE ?? VILLAGER_TASK_QUEUE,
-    temporalUiUrl: process.env.TEMPORAL_UI_URL ?? defaultUiUrl,
+    temporalAddress: (process.env.TEMPORAL_ADDRESS ?? 'localhost:7233').trim(),
+    temporalNamespace: (process.env.TEMPORAL_NAMESPACE ?? 'default').trim(),
+    temporalTaskQueue: (process.env.TEMPORAL_TASK_QUEUE ?? VILLAGER_TASK_QUEUE).trim(),
+    temporalUiUrl: (process.env.TEMPORAL_UI_URL ?? defaultUiUrl).trim(),
     temporalApiKey,
     temporalTls,
     temporalTlsCertBase64,
     temporalTlsKeyBase64,
-    simulationMsPerHour: Number(process.env.SIMULATION_MS_PER_HOUR ?? DEFAULT_MS_PER_IN_GAME_HOUR),
+    simulationMsPerHour: Number(
+      (process.env.SIMULATION_MS_PER_HOUR ?? String(DEFAULT_MS_PER_IN_GAME_HOUR)).trim(),
+    ),
     continueAsNewAfterDays: Number(
-      process.env.CONTINUE_AS_NEW_AFTER_DAYS ?? DEFAULT_CONTINUE_AS_NEW_AFTER_DAYS,
+      (
+        process.env.CONTINUE_AS_NEW_AFTER_DAYS ?? String(DEFAULT_CONTINUE_AS_NEW_AFTER_DAYS)
+      ).trim(),
     ),
   };
 }
