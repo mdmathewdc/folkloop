@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: folkloop-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile.worker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: TEMPORAL_TASK_QUEUE
+        value: folkloop-villagers
+      - key: SIMULATION_MS_PER_HOUR
+        value: "30000"
+      - key: CONTINUE_AS_NEW_AFTER_DAYS
+        value: "3"
+      - key: DATABASE_URL
+        sync: false
+      - key: TEMPORAL_ADDRESS
+        sync: false
+      - key: TEMPORAL_NAMESPACE
+        sync: false
+      - key: TEMPORAL_API_KEY
+        sync: false
