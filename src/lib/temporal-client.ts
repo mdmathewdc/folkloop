@@ -5,7 +5,7 @@ import {
   WorkflowUpdateFailedError,
 } from '@temporalio/client';
 import { ApplicationFailure } from '@temporalio/common';
-import { getConfig } from './config';
+import { getConfig, getTemporalConnectionOptions } from './config';
 import { BOB_VILLAGER_ID, BOB_WORKFLOW_ID } from './constants';
 import type {
   BreadStolenSignalPayload,
@@ -43,9 +43,9 @@ const globalForTemporal = globalThis as unknown as {
 async function getTemporalClient(): Promise<Client> {
   if (!globalForTemporal.__folkloopTemporalClientPromise) {
     const config = getConfig();
-    globalForTemporal.__folkloopTemporalClientPromise = Connection.connect({
-      address: config.temporalAddress,
-    })
+    globalForTemporal.__folkloopTemporalClientPromise = Connection.connect(
+      getTemporalConnectionOptions(config),
+    )
       .then((connection) => new Client({ connection, namespace: config.temporalNamespace }))
       .catch((err) => {
         globalForTemporal.__folkloopTemporalClientPromise = undefined;
@@ -53,6 +53,16 @@ async function getTemporalClient(): Promise<Client> {
       });
   }
   return globalForTemporal.__folkloopTemporalClientPromise;
+}
+
+export async function pingTemporal(): Promise<boolean> {
+  try {
+    const client = await getTemporalClient();
+    await client.workflowService.getSystemInfo({});
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function protobufTimestampToIso(

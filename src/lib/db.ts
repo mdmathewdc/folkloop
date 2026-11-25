@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { getConfig } from './config';
+import { getConfig, getPgPoolConfig } from './config';
 import type {
   VillagerActivity,
   VillagerEventRecord,
@@ -13,9 +13,7 @@ const globalForDb = globalThis as unknown as { __folkloopPool?: Pool };
 
 export function getPool(): Pool {
   if (!globalForDb.__folkloopPool) {
-    globalForDb.__folkloopPool = new Pool({
-      connectionString: getConfig().databaseUrl,
-    });
+    globalForDb.__folkloopPool = new Pool(getPgPoolConfig());
   }
   return globalForDb.__folkloopPool;
 }

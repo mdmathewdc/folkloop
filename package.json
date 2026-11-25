@@ -11,6 +11,8 @@
     "dev": "node scripts/dev.mjs",
     "dev:web": "next dev -p 3000",
     "dev:worker": "tsx watch src/temporal/worker.ts",
+    "build:worker": "node scripts/bundle-workflow.mjs",
+    "start:worker": "tsx src/temporal/worker.ts",
     "infra:up": "docker compose -f infrastructure/docker-compose.yml up -d",
     "infra:down": "docker compose -f infrastructure/docker-compose.yml down",
     "db:migrate": "node scripts/migrate.mjs",

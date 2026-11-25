@@ -42,7 +42,8 @@ New to Temporal? Read **[docs/TEMPORAL_CONCEPTS.md](docs/TEMPORAL_CONCEPTS.md)**
 - **Vercel** is ideal for the Next.js frontend and `/api/villagers/bob/*` routes (which only act as a lightweight Temporal Client and PostgreSQL reader).
 - Temporal requires a **persistent Temporal Server** and a **long-running, always-on Worker** (`src/temporal/worker.ts`) — serverless functions cannot hold a Worker polling loop.
 - A simple production stack: **Vercel** (Next.js app) + **Temporal Cloud** (or self-hosted Temporal) + **Neon / Supabase** (PostgreSQL) + **Railway / Fly.io** (always-on Worker).
-- Point Vercel and the Worker at the same `DATABASE_URL`, `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, and `TEMPORAL_TASK_QUEUE`.
+- Point Vercel and the Worker at the same `DATABASE_URL`, `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, `TEMPORAL_API_KEY`, and `TEMPORAL_TASK_QUEUE`.
+- See **[docs/DEPLOY.md](docs/DEPLOY.md)** for the full step-by-step setup (Vercel + Temporal Cloud + Neon/Supabase + Railway/Fly.io).
 
 ## Commands
 

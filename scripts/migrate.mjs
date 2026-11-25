@@ -28,8 +28,18 @@ const { Pool } = require(path.join(repoRoot, 'node_modules/pg'));
 const databaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://folkloop:folkloop@localhost:5432/folkloop';
 
+const useSsl =
+  process.env.DATABASE_SSL === 'true' ||
+  databaseUrl.includes('sslmode=require') ||
+  databaseUrl.includes('neon.tech') ||
+  databaseUrl.includes('supabase.co') ||
+  databaseUrl.includes('supabase.com');
+
 async function main() {
-  const pool = new Pool({ connectionString: databaseUrl });
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+  });
   const migrationsDir = path.join(repoRoot, 'infrastructure/migrations');
   const files = fs
     .readdirSync(migrationsDir)
