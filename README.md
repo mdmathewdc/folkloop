@@ -1,4 +1,4 @@
-# Folkloop — Little lives. Endless stories.
+# Folkloop
 
 A Pokémon Emerald–style pixel-art life simulation powered by **[Temporal.io](https://temporal.io/)**, **Next.js (App Router)**, **Phaser 3**, and **PostgreSQL**.
 
